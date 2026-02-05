@@ -1,7 +1,37 @@
-data/frames/
-
+cat > .gitignore << 'EOF'
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
 
-.Ds_Store
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# 数据和媒体（你的大文件都在这里）
+data/
+assets/
+result/
+
+# 模型权重（万一有放外面的）
+*.pth
+*.pt
+*.ckpt
+*.h5
+*.pkl
+
+# 日志
+runs/
+logs/
+*.log
 .ipynb_checkpoints/
+
+# 系统
+.DS_Store
+Thumbs.db
+EOF
