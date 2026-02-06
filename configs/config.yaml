@@ -5,9 +5,11 @@ paths:
   base_dir: "."
   data_dir: "data"
   frame_dir: "data/frames"
-  csv_path: "data/actions.csv"
+  csv_dir: "data/csv/"
+  csv_path: "data/csv/actions.csv"
   model_save_dir: "result/models"
   log_dir: "result/logs"
+  assets_dir: "assets"
 
 # 环境与采集配置
 collection:
@@ -17,8 +19,9 @@ collection:
   # alpha 越大响应越快，越小越丝滑
   smooth_alpha: 0.5
   #检查data_collection.py中csv采集是否正确
-  test_mode: true
-  
+  test_mode: false
+
+# csv列名配置
 data:
   columns:  
     - "frame_id"

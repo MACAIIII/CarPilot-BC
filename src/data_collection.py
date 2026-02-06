@@ -20,6 +20,7 @@ def collect_data():
     
     frame_dir = cfg.paths['frame_dir']
     csv_path = cfg.paths['csv_path']
+    csv_dir = cfg.paths.get('csv_dir', os.path.dirname(csv_path))
     columns = cfg.data['columns']
     
     # 2. 初始化环境与工具
@@ -104,6 +105,9 @@ def collect_data():
             target_columns = None
 
         if not is_test_mode and len(data_records) > 0 and target_columns:
+            if not os.path.exists(csv_dir):
+                os.makedirs(csv_dir, exist_ok=True)
+            
             # 使用 YAML 定义的表头创建 DataFrame
             df = pd.DataFrame(data_records, columns=target_columns)
             
