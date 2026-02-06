@@ -6,11 +6,7 @@
 
 ---
 
-<p align="center">
-  < img src="assets/dirve.gif" width="600" alt="Driving Demo">
-  <br>
-  <em>Demo: AI 在 CarRacing-v3 中的表现记录</em>
-</p >
+![Driving Demo](assets/dirve.gif)
 
 ## 技术实现
 * **控制平滑化**：针对键盘离散输入的局限性，引入指数移动平均（EMA）进行逻辑插值，产出更适合回归模型拟合的连续动作标签。
@@ -18,12 +14,8 @@
 * **数据流管线**：实现了一套轻量化的本地数据管理方案，包括实时采样存图、CSV 标注对齐及离群值清洗。
 
 ## 训练监控
-<p align="center">
-  < img src="assets/Loss_train_epoch.png" width="45%" />
-  < img src="assets/Loss_train_step.png" width="45%" />
-  <br>
-  <em>训练 Loss 趋势（用于验证模型是否正在收敛）</em>
-</p >
+![Epoch Loss](assets/Loss_train_epoch.png)
+![Step Loss](assets/Loss_train_step.png)
 
 ## 文件说明
 ```text
