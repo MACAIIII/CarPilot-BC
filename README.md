@@ -5,6 +5,8 @@
 
 > 🎯 **项目定位**：衔接强化学习（RL）与视觉-语言-动作（VLA）学习的桥梁性练习项目，专注于**端到端模仿学习**的基础实践。
 
+
+！[demo演示](assets/dirve.gif)
 ![每轮损失函数曲线](assets/Loss_train_epoch.png)
 ![每步损失函数曲线](assets/Loss_train_step.png)
 
