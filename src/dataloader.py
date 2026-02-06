@@ -35,8 +35,8 @@ class CarRacingDataset(Dataset):
         self.img_dir = img_dir if img_dir else cfg.paths['frame_dir']
         
         # 从配置中读取超参数
-        self.seq_len = cfg.train.get('seq_len', 5)
-        self.img_size = cfg.train.get('img_size', 64)
+        self.seq_len = cfg.train['seq_len']
+        self.img_size = cfg.train['img_size']
         self.augment = augment
 
         # 加载数据

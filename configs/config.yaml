@@ -7,6 +7,7 @@ paths:
   frame_dir: "data/frames"
   csv_dir: "data/csv/"
   csv_path: "data/csv/actions.csv"
+  result_dir: "result"
   model_save_dir: "result/models"
   log_dir: "result/logs"
   assets_dir: "assets"
@@ -32,7 +33,9 @@ data:
 
 # 训练超参数
 train:
+  seq_len: 5
+  img_size: 64
   batch_size: 64
-  learning_rate: 0.0001
+  lr: 0.0001
   epochs: 50
   device: "cuda"  # 或 "cpu"
