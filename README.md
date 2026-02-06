@@ -21,7 +21,7 @@
 还进行了降采样，解决了直道数据过剩导致的模型不转弯的问题;
 对数据进行了水平翻转，增加数据量
 
-！[compare](assets/distribution_compare.png)
+![数据分布对比](./assets/distribution_compare.png)
 
 **优化点：**
 * **去尖峰处理**：去除了约 70% 的直道（转向角接近 0）样本，强制模型学习弯道特征。
