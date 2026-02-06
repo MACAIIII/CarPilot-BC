@@ -6,8 +6,8 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-from dataset import CarRacingDataset
-from model_arch import CarPilotNet
+from src.dataloader import CarRacingDataset
+from src.networks import CarPilotNet
 import argparse
 
 def get_args():

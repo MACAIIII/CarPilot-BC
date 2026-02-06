@@ -1,0 +1,25 @@
+# configs/config.yaml
+
+# 路径配置
+paths:
+  base_dir: "."
+  data_dir: "data"
+  frame_dir: "data/frames"
+  csv_path: "data/actions.csv"
+  model_save_dir: "result/models"
+  log_dir: "result/logs"
+
+# 环境与采集配置
+collection:
+  env_name: "CarRacing-v3"
+  render_mode: "human"
+  save_every_n_steps: 2
+  # alpha 越大响应越快，越小越丝滑
+  smooth_alpha: 0.2
+
+# 训练超参数
+train:
+  batch_size: 64
+  learning_rate: 0.0001
+  epochs: 50
+  device: "cuda"  # 或 "cpu"

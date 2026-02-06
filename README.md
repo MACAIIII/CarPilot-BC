@@ -18,14 +18,4 @@
 ![Step Loss](assets/Loss_train_step.png)
 
 ## 文件说明
-```text
-CarPilot-BC/
-├── data/               # 本地数据集存储
-├── result/             # 训练权重及可视化评估结果
-├── collect_data.py     # 带有平滑逻辑的人类驾驶数据采集脚本
-├── clean_data.py       # 删除选中图片和csv区域脚本
-├── check_data.py       # 数据一致性验证与抽样检查
-├── model_arch.py       # 模型定义（CNN + 基础时序模块）
-├── train.py            # 训练逻辑与 Loss 记录
-├── drive.py            # 加载模型并在环境中进行闭环推理
-└── dataset.py          # PyTorch Dataset 定义与数据预处理
+

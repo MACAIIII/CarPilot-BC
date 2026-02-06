@@ -1,7 +1,7 @@
 import gymnasium as gym
 import torch
 import numpy as np
-from model_arch import CarPilotNet
+from src.networks import CarPilotNet
 from torchvision import transforms
 from collections import deque
 
