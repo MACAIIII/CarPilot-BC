@@ -1,44 +1,39 @@
 # CarPilot-BC
 
-基于**行为克隆（Behavioral Cloning）**与**时序建模**的端到端自动驾驶系统。
+基于行为克隆（Behavioral Cloning）的 CarRacing-v3 自动驾驶实践 demo。
 
-
-> **项目定位**：衔接强化学习（RL）与视觉-语言-动作（VLA）学习的桥梁性练习项目，专注于**端到端模仿学习**的基础实践。
-
-
-！[demo演示](assets/dirve.gif)
-![每轮损失函数曲线](assets/Loss_train_epoch.png)
-![每步损失函数曲线](assets/Loss_train_step.png)
-
-
+**项目说明**：这是一个基于 PyTorch 的入门级深度学习项目，旨在通过简单的行为克隆（模仿学习）方法，让模型学习人类在 Gymnasium 赛车环境中的控制决策。本项目主要用于跑通“数据采集-模型训练-闭环部署”的完整流程，是视觉控制任务的一个基础练习，同时也是为了链接RL和VLA完成的基础训练。
 
 ---
 
-## 核心特性
+<p align="center">
+  < img src="assets/dirve.gif" width="600" alt="Driving Demo">
+  <br>
+  <em>Demo: AI 在 CarRacing-v3 中的表现记录</em>
+</p >
 
-| 特性 | 说明 | 优势 |
-|:---|:---|:---|
-| **EMA 平滑控制** | 指数移动平均插值算法 | 将离散键盘输入转化为连续物理信号，消除突变噪声，提升回归任务训练稳定性 |
-| **时序数据采集** | 基于滑动窗口的多帧序列 | 捕获车辆动态信息，支持时序模型 |
-| **CNN+Transformer** | 空间特征 + 时序注意力 | 兼顾局部视觉感知与全局运动趋势预测 |
-| **完整数据管线** | 采集→清洗→增强→训练→部署 | 可复现的简易流程 |
+## 技术实现
+* **控制平滑化**：针对键盘离散输入的局限性，引入指数移动平均（EMA）进行逻辑插值，产出更适合回归模型拟合的连续动作标签。
+* **特征提取**：使用简单的卷积神经网络（ResNet18）提取图像特征，并使用（TransFormers）处理时序特征，尝试捕捉车辆运动惯性。
+* **数据流管线**：实现了一套轻量化的本地数据管理方案，包括实时采样存图、CSV 标注对齐及离群值清洗。
 
-## 📂 项目结构
+## 训练监控
+<p align="center">
+  < img src="assets/Loss_train_epoch.png" width="45%" />
+  < img src="assets/Loss_train_step.png" width="45%" />
+  <br>
+  <em>训练 Loss 趋势（用于验证模型是否正在收敛）</em>
+</p >
 
-\`\`\`text
+## 文件说明
+```text
 CarPilot-BC/
-├── data/               # 训练数据 (Git 忽略)
-│   ├── frames/         # 采集的 96x96 驾驶画面
-│   └── actions.csv     # 物理动作标签 [frame_id,steering, throttle, brake]
-├── result/             # 存放训练好的 .pth 模型权重以及输出的图表信息
-├── check_data.py       # 检查数据采集是非正确
-├── clean_data.py       # 清除不良数据脚本
-├── collect_data.py     # 数据采集脚本 (支持 EMA 平滑控制)
-├── dataset.py          # 数据处理增强
-├── drive.py            # 自动驾驶推理与测试脚本
-├── model_arch.py       # 模型架构连接CNN+Transformer
-├── train.py            # 训练脚本
-├── test_env.py         # 验证数据采集环境
-├── .gitignore          # 过滤大数据文件
-\`\`\`
-
+├── data/               # 本地数据集存储
+├── result/             # 训练权重及可视化评估结果
+├── collect_data.py     # 带有平滑逻辑的人类驾驶数据采集脚本
+├── clean_data.py       # 删除选中图片和csv区域脚本
+├── check_data.py       # 数据一致性验证与抽样检查
+├── model_arch.py       # 模型定义（CNN + 基础时序模块）
+├── train.py            # 训练逻辑与 Loss 记录
+├── drive.py            # 加载模型并在环境中进行闭环推理
+└── dataset.py          # PyTorch Dataset 定义与数据预处理
