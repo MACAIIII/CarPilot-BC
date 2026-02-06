@@ -15,7 +15,17 @@ collection:
   render_mode: "human"
   save_every_n_steps: 2
   # alpha 越大响应越快，越小越丝滑
-  smooth_alpha: 0.2
+  smooth_alpha: 0.5
+  #检查data_collection.py中csv采集是否正确
+  test_mode: true
+  
+data:
+  columns:  
+    - "frame_id"
+    - "steering"
+    - "throttle"
+    - "brake"
+
 
 # 训练超参数
 train:

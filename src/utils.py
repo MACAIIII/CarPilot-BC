@@ -3,29 +3,40 @@ import os
 import numpy as np
 
 class YamlConfig:
-    def __init__(self, config_path):
+    def __init__(self):
+        # 强制使用绝对路径锁定项目根目录
+        current_file = os.path.abspath(__file__)
+        project_root = os.path.dirname(os.path.dirname(current_file))
+        config_path = os.path.join(project_root, "configs", "config.yaml")
+        
+        if not os.path.exists(config_path):
+            raise FileNotFoundError(f"❌ 找不到配置文件: {config_path}")
+            
         with open(config_path, 'r', encoding='utf-8') as f:
+            # 直接存储为原生 Python 字典
             self._config = yaml.safe_load(f)
 
-    def __getattr__(self, item):
-        # 允许通过 cfg.paths['data_dir'] 这种方式访问
-        if item in self._config:
-            return self._config[item]
-        raise AttributeError(f"No such config: {item}")
+    # 通过 property 暴露各模块字典
+    @property
+    def data(self): return self._config.get('data', {})
+    
+    @property
+    def paths(self): return self._config.get('paths', {})
+    
+    @property
+    def collection(self): return self._config.get('collection', {})
+    
+    @property
+    def train(self): return self._config.get('train', {})
 
-# 初始化配置单例
-# 自动定位项目根目录下的 yaml 文件
-_current_dir = os.path.dirname(os.path.abspath(__file__))
-_yaml_path = os.path.join(_current_dir, "../configs/config.yaml")
-cfg = YamlConfig(_yaml_path)
-
+# 实例化
+cfg = YamlConfig()
 
 class ActionSmoother:
     def __init__(self, alpha=None, action_dim=3):
-        # 从 YAML 的 collection 层级读取 smooth_alpha
+        # 使用原生字典取值：cfg.collection['xxx']
         self.alpha = alpha if alpha is not None else cfg.collection['smooth_alpha']
         self.current_action = np.zeros(action_dim)
-        print(f"DEBUG: 平滑器启动 | 配置文件 Alpha: {self.alpha}")
 
     def smooth(self, target_action):
         self.current_action = self.alpha * target_action + (1 - self.alpha) * self.current_action

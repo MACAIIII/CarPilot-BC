@@ -1,146 +1,128 @@
 import gymnasium as gym
 import pygame
-import numpy as np
 import cv2
 import pandas as pd
+import numpy as np
 import os
+import sys
 from datetime import datetime
 
-# --- 配置区 ---
-SAVE_DIR = "data/frames"
-CSV_PATH = "data/actions.csv"
-SEQ_LENGTH = 5  # 预留：提醒我们未来需要连续5帧
+# 确保能找到根目录下的 configs 和 src
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# 平滑参数：alpha 越大响应越快，越小越平滑（建议 0.1~0.3）
-SMOOTH_ALPHA = 0.4  # 当前目标值的权重（15%新值 + 85%旧值）
-SAVE_INTERVAL = 2  # 每隔多少帧保存一次图像和数据
+from src.utils import cfg, ActionSmoother
 
-os.makedirs(SAVE_DIR, exist_ok=True)
-
-class SmoothController:
-    """带插值平滑的键盘控制器"""
-    def __init__(self, alpha=SMOOTH_ALPHA):
-        self.alpha = alpha
-        # 当前平滑后的动作状态（会持续变化）
-        self.current_action = np.array([0.0, 0.0, 0.0])
+def collect_data():
+    # 1. 获取 YAML 配置
+    is_test_mode = cfg.collection['test_mode']
+    save_every_n = cfg.collection['save_every_n_steps']
+    target_fps = 30  # 锁定采集频率为 30Hz
+    
+    frame_dir = cfg.paths['frame_dir']
+    csv_path = cfg.paths['csv_path']
+    columns = cfg.data['columns']
+    
+    # 2. 初始化环境与工具
+    if not is_test_mode:
+        os.makedirs(frame_dir, exist_ok=True)
         
-    def get_smooth_action(self, raw_action):
-        """
-        对原始键盘输入进行指数移动平均平滑
-        raw_action: 键盘直接输入 [steer, gas, brake]
-        return: 平滑后的连续动作（变化更自然）
-        """
-        # 指数平滑：new = alpha * target + (1-alpha) * old
-        self.current_action = (
-            self.alpha * np.array(raw_action) + 
-            (1 - self.alpha) * self.current_action
-        )
-        return self.current_action.copy()
-    
-    def reset(self):
-        """重置状态（车辆重置时调用）"""
-        self.current_action = np.array([0.0, 0.0, 0.0])
-
-def collect():
-    env = gym.make("CarRacing-v3", render_mode="human")
+    env = gym.make(cfg.collection['env_name'], render_mode=cfg.collection['render_mode'])
     obs, info = env.reset()
+    smoother = ActionSmoother()
     
-    controller = SmoothController(alpha=SMOOTH_ALPHA)
-    data_list = []
+    # 引入 Pygame 时钟来控制帧率
     clock = pygame.time.Clock()
-    total_frames = 0
-
-    step_counter = 0
-
+    
+    data_records = []
+    total_steps = 0
+    saved_count = 0
     running = True
 
-    print("=" * 50)
-    print("【插值平滑版本】数据采集器")
-    print("控制方式：")
-    print("  ← → : 转向（会持续变化，不是瞬间打满）")
-    print("  ↑   : 油门（渐进加速）")
-    print("  ↓   : 刹车（渐进刹车）")
-    print("  ESC : 保存并退出")
-    print(f"平滑系数 alpha = {SMOOTH_ALPHA}（越小越顺滑）")
-    print("=" * 50)
+    print("="*60)
+    print(f"🔴 采集模式启动 | 锁定 FPS: {target_fps}")
+    if is_test_mode:
+        print("🛠️  当前模式：测试模式 (仅预览输出)")
+    print("="*60)
 
-    while running:
-        # 1. 读取原始键盘输入（目标值）
-        raw_action = np.array([0.0, 0.0, 0.0])  # [转向, 油门, 刹车]
-        pygame.event.pump()
-        keys = pygame.key.get_pressed()
+    try:
+        while running:
+            # --- 关键修改：控制循环频率 ---
+            clock.tick(target_fps) 
+            
+            # 3. 处理按键输入
+            pygame.event.pump()
+            keys = pygame.key.get_pressed()
+            
+            target_action = np.array([0.0, 0.0, 0.0])
+            if keys[pygame.K_LEFT]:  target_action[0] = -1.0
+            if keys[pygame.K_RIGHT]: target_action[0] = 1.0
+            if keys[pygame.K_UP]:    target_action[1] = 1.0
+            if keys[pygame.K_DOWN]:  target_action[2] = 0.8
+            
+            # 4. 平滑处理
+            smoothed_action = smoother.smooth(target_action)
+            
+            # 5. 环境步进
+            next_obs, reward, terminated, truncated, info = env.step(smoothed_action)
+            
+            # 6. 采样逻辑
+            if total_steps % save_every_n == 0:
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+                img_name = f"frame_{timestamp}.jpg"
+                
+                if is_test_mode:
+                    print(f"\r[PREVIEW] {img_name} | S:{smoothed_action[0]:.3f} T:{smoothed_action[1]:.3f}, B:{smoothed_action[2]:.3f}" ,end="")
+                else:
+                    img_path = os.path.join(frame_dir, img_name)
+                    cv2.imwrite(img_path, cv2.cvtColor(next_obs, cv2.COLOR_RGB2BGR))
+                    
+                    data_records.append([
+                        img_name, 
+                        smoothed_action[0], 
+                        smoothed_action[1], 
+                        smoothed_action[2]
+                    ])
+                    saved_count += 1
+                    print(f"\r已存: {saved_count} 帧 | 实时 FPS: {clock.get_fps():.1f}", end="")
+
+            total_steps += 1
+            if terminated or truncated:
+                env.reset()
+                smoother.reset()
+
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    running = False
+
+    finally:
+        # --- 关键修改：CSV 健壮性写入 ---
+        try:
+            target_columns = columns
+            print(f"\n\n📝 目标列: {target_columns}")
+        except (AttributeError, KeyError):
+            print("\n❌ 错误: YAML 配置文件中缺失 'data: columns' 定义！")
+            target_columns = None
+
+        if not is_test_mode and len(data_records) > 0 and target_columns:
+            # 使用 YAML 定义的表头创建 DataFrame
+            df = pd.DataFrame(data_records, columns=target_columns)
+            
+            # 检查文件是否存在
+            file_exists = os.path.isfile(csv_path)
+            
+            # 写入 CSV
+            # 只有在文件不存在时才写入 header
+            df.to_csv(csv_path, mode='a', index=False, header=not file_exists)
+            
+            print(f"\n\n✅ 数据追加成功！")
+            print(f"📊 字段对齐: {target_columns}")
+            print(f"📂 存储路径: {csv_path}")
         
-        # 设置目标值（这里可以用满幅值，平滑器会处理过渡）
-        if keys[pygame.K_LEFT]:  raw_action[0] = -1.0
-        if keys[pygame.K_RIGHT]: raw_action[0] = 1.0
-        if keys[pygame.K_UP]:    raw_action[1] = 1.0   # 改为满油门，让平滑器控制幅度
-        if keys[pygame.K_DOWN]:  raw_action[2] = 0.8
-        if keys[pygame.K_ESCAPE]: break
-
-        # 2. 【关键】获取平滑后的动作（变化值）
-        smooth_action = controller.get_smooth_action(raw_action)
-        
-        # 调试：每30帧打印一次，观察平滑效果
-        if total_frames % 30 == 0 and total_frames > 0:
-            print(f"[Frame {total_frames}] 原始: [{raw_action[0]:+.1f}, {raw_action[1]:.1f}, {raw_action[2]:.1f}] "
-                  f"→ 平滑: [{smooth_action[0]:+.3f}, {smooth_action[1]:.3f}, {smooth_action[2]:.3f}]")
-
-        # 3. 执行动作（送入环境的也是平滑后的值，更自然）
-        obs, reward, terminated, truncated, info = env.step(smooth_action)
-
-        step_counter +=1
-        # 4. 保存图像
-        if step_counter % SAVE_INTERVAL != 0:
-            img_name = f"frame_{datetime.now().strftime('%Y%m%d_%H%M%S_%f')}.jpg"
-            img_path = os.path.join(SAVE_DIR, img_name)
-            cv2.imwrite(img_path, cv2.cvtColor(obs, cv2.COLOR_RGB2BGR))
-
-            # 5. 【关键】记录平滑后的值（不是原始键盘输入！）
-            data_list.append({
-                "frame_id": img_name,
-                "steering": round(smooth_action[0], 4),   # 保留4位小数，体现连续性
-                "throttle": round(smooth_action[1], 4),
-                "brake": round(smooth_action[2], 4),
-                # 可选：也记录原始值，用于分析
-                # "raw_steering": raw_action[0],
-                # "raw_throttle": raw_action[1],
-                # "raw_brake": raw_action[2],
-            })
-
-            total_frames += 1
-            if total_frames % 100 == 0:
-                avg_steer = np.mean([d["steering"] for d in data_list[-100:]])
-                print(f"✓ 已采集 {total_frames} 帧 | 最近100帧平均转向: {avg_steer:+.3f}")
-
-        # 处理回合结束
-        if terminated or truncated:
-            obs, info = env.reset()
-            controller.reset()  # 重置平滑状态
-            print("--- 车辆重置，平滑器状态清零 ---")
-
-        clock.tick(30)
-
-    # 6. 保存数据
-    df = pd.DataFrame(data_list)
-    
-    # 计算一些统计信息
-    print("\n" + "=" * 50)
-    print("采集统计：")
-    print(f"  总帧数: {len(df)}")
-    print(f"  转向范围: [{df['steering'].min():+.3f}, {df['steering'].max():+.3f}]")
-    print(f"  油门范围: [{df['throttle'].min():.3f}, {df['throttle'].max():.3f}]")
-    print(f"  转向标准差: {df['steering'].std():.3f}（越大说明变化越丰富）")
-    print("=" * 50)
-    
-    # 保存到CSV
-    if not os.path.isfile(CSV_PATH):
-        df.to_csv(CSV_PATH, index=False,header=True)  
-    else:
-        df.to_csv(CSV_PATH, mode='a', header=False, index=False)
-
-    print(f"数据已保存至: {CSV_PATH}")
-    env.close()
-    pygame.quit()
+        elif is_test_mode:
+            print("\n\n🏁 测试模式结束，未写入任何文件。")
+            
+        env.close()
+        pygame.quit()
 
 if __name__ == "__main__":
-    collect()
+    collect_data()
