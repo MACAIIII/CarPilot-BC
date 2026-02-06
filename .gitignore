@@ -15,8 +15,11 @@ venv/
 
 # 数据和媒体（你的大文件都在这里）
 data/*
+!data/.gitkeep
+
 !data/actions.csv
 result/*
+!result/.gitkeep
 
 # 模型权重（万一有放外面的）
 *.pth
