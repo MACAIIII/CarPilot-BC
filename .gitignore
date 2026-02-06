@@ -14,9 +14,9 @@ venv/
 *.swp
 
 # 数据和媒体（你的大文件都在这里）
-data/
-assets/
-result/
+data/*
+!data/actions.csv
+result/*
 
 # 模型权重（万一有放外面的）
 *.pth
@@ -25,11 +25,6 @@ result/
 *.h5
 *.pkl
 
-# 日志
-runs/
-logs/
-*.log
-.ipynb_checkpoints/
 
 # 系统
 .DS_Store
